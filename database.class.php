@@ -90,11 +90,11 @@ class Database
         $fields=array();
         $placeholders=array();
         foreach($data as $key => $val){
-            $fields[]=$key;
+            $fields[]='`'.$key.'`';
             $placeholders[]=':'.$key;
         }
 
-        $sql = "INSERT INTO ".$table." (".implode(',',$fields).") VALUES (".implode(',',$placeholders).");";
+        $sql = "INSERT INTO `".$table."`(".implode(',',$fields).") VALUES (".implode(',',$placeholders).");";
         $stmt = $this->dbh->prepare($sql);
         foreach($data as $key => $val){
             $stmt->bindParam(':'.$key, $val);
