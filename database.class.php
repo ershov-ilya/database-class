@@ -104,4 +104,32 @@ class Database
         $lastID = $this->dbh->lastInsertId();
         return $lastID;
     }
+
+    public function updateOne($table, $id, $data, $id_field_name='id'){
+        $fields=array();
+        $placeholders=array();
+        foreach($data as $key => $val){
+            $fields[]='`'.$key.'`';
+            $placeholders[]=':'.$key;
+        }
+        $sql = "UPDATE `".$table."` SET ";
+
+        $count = count($data);
+        $i=0;
+        foreach($data as $key => $val){
+            $sql .= "`$key`=:$key";
+            $i++;
+            if($i<$count) $sql .= ",";
+            $sql .= " ";
+        }
+        $sql .= " WHERE `$id_field_name`='".$id."';";
+
+        $stmt = $this->dbh->prepare($sql);
+        foreach($data as $key => $val){
+            $stmt->bindParam(':'.$key, $data[$key]);
+        }
+        $success = $stmt->execute();
+        if($success) return true;
+        return false;
+    }
 } // class Database
