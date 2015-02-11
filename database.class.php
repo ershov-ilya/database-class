@@ -18,7 +18,7 @@ class Database
         $info = $this->dbh->errorInfo();
         if(!empty($info[0])){
             if(DEBUG) print $info[2]."\n";
-            logMessage($info[2]);
+            if(function_exists('logMessage')) logMessage($info[2]);
         }
     }
 
@@ -79,7 +79,7 @@ class Database
         return $result;
     }
 
-    public function getAllSQL($sql)
+    public function get($sql)
     {
         $stmt = $this->dbh->query($sql);
         $stmt->setFetchMode(PDO::FETCH_ASSOC);
@@ -88,9 +88,16 @@ class Database
         return $rows;
     }
 
-    public function getAll($sql)
+    public function getTable($table, $columns='', $from=0, $limit=-1)
     {
-        // TODO: Переписать
+        $page='';
+        if(isset($limit) && $limit>=0) $page = "LIMIT $from, $limit";
+        if(empty($columns)) $sql = "SELECT * FROM `$table` $page;";
+        else{
+            if(is_array($columns)) $columns = "`".implode("`,`",$columns)."`";
+            $columns = preg_replace('/;/', '', $columns);
+            $sql = "SELECT $columns FROM `$table` $page;";
+        }
         $stmt = $this->dbh->query($sql);
         $stmt->setFetchMode(PDO::FETCH_ASSOC);
         $rows = $stmt->fetchAll();
