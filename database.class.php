@@ -54,7 +54,7 @@ class Database
         }
     } // function __construct
 
-    public function getOne($sql)
+    public function getOneSQL($sql)
     {
         $stmt = $this->dbh->query($sql);
         $stmt->setFetchMode(PDO::FETCH_ASSOC);
@@ -66,8 +66,31 @@ class Database
         return $result;
     }
 
+    public function getOne($table, $id, $id_field_name='id')
+    {
+        $sql = "SELECT * FROM `$table` WHERE `$id_field_name`='$id';";
+        $stmt = $this->dbh->query($sql);
+        $stmt->setFetchMode(PDO::FETCH_ASSOC);
+        $rows = $stmt->fetchAll();
+        if(empty($rows)) return array();
+        $result = $rows[0];
+//        foreach($rows as $row){} // Изъятие из потока?
+        $this->errors();
+        return $result;
+    }
+
+    public function getAllSQL($sql)
+    {
+        $stmt = $this->dbh->query($sql);
+        $stmt->setFetchMode(PDO::FETCH_ASSOC);
+        $rows = $stmt->fetchAll();
+        $this->errors();
+        return $rows;
+    }
+
     public function getAll($sql)
     {
+        // TODO: Переписать
         $stmt = $this->dbh->query($sql);
         $stmt->setFetchMode(PDO::FETCH_ASSOC);
         $rows = $stmt->fetchAll();
