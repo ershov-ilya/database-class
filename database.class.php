@@ -46,8 +46,9 @@ class Database
         if(!(isset($dbtype) && isset($dbhost) && isset($dbname) && isset($dbuser) && isset($dbpass))) return false;
         try
         {
+            /* @var PDO $DBH */
             // Save stream
-            $this->dbh = new PDO("$dbtype:host=$dbhost;dbname=$dbname" , $dbuser, $dbpass,
+            $this->dbh = $DBH = new PDO("$dbtype:host=$dbhost;dbname=$dbname" , $dbuser, $dbpass,
                 array (PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES 'utf8'")
             );
         }
@@ -147,7 +148,15 @@ class Database
             $stmt->bindParam(':'.$key, $data[$key]);
         }
         $success = $stmt->execute();
-        if(empty($success)) return false;
+
+        if(empty($success)) {
+            if(DEBUG){
+                print "ERROR:\n";
+                print_r($stmt->errorInfo());
+            }
+            return false;
+        }
+
         $lastID = $this->dbh->lastInsertId();
         return $lastID;
     }
