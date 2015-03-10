@@ -21,7 +21,7 @@ class Database
     {
         $info = $this->dbh->errorInfo();
         if(!empty($info[0])){
-            if(DEBUG) print $info[2]."\n";
+            if(DEBUG && !empty($info[2])) print $info[2]."\n";
             if(function_exists('logMessage')) logMessage($info[2]);
         }
     }
