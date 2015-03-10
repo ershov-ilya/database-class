@@ -13,6 +13,10 @@ class Database
     public $dbh; // Database handler
     public $cache;
 
+    public static function test(){
+        return "Database class: OK";
+    }
+
     public function errors()
     {
         $info = $this->dbh->errorInfo();
