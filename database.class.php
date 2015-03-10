@@ -70,9 +70,22 @@ class Database
         return $result;
     }
 
-    public function getOne($table, $id, $id_field_name='id')
+    public function getOne($table, $id, $filter='', $id_field_name='id')
     {
-        $sql = "SELECT * FROM `$table` WHERE `$id_field_name`='$id';";
+        $sql = "SELECT ";
+        if(empty($filter)) {
+            $sql .= "*";
+        }
+        else{
+            if(is_array($filter)){
+                $sql.=implode(',',$filter);
+            }
+            else{
+                $sql.=$filter;
+            }
+        }
+
+        $sql .= " FROM `$table` WHERE `$id_field_name`='$id';";
         $stmt = $this->dbh->query($sql);
         $stmt->setFetchMode(PDO::FETCH_ASSOC);
         $rows = $stmt->fetchAll();
