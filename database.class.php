@@ -13,11 +13,20 @@ class Database
     public $dbh; // Database handler
     public $cache;
 
+    public static function test(){
+        return "Database class: OK";
+    }
+
     public function errors()
     {
         $info = $this->dbh->errorInfo();
+<<<<<<< HEAD
         if(!empty($info[2])){
             if(DEBUG) print $info[2]."\n";
+=======
+        if(!empty($info[0])){
+            if(DEBUG && !empty($info[2])) print $info[2]."\n";
+>>>>>>> 9ef3cf0a19789148cd60704383eb630396785371
             if(function_exists('logMessage')) logMessage($info[2]);
         }
     }
@@ -46,8 +55,9 @@ class Database
         if(!(isset($dbtype) && isset($dbhost) && isset($dbname) && isset($dbuser) && isset($dbpass))) return false;
         try
         {
+            /* @var PDO $DBH */
             // Save stream
-            $this->dbh = new PDO("$dbtype:host=$dbhost;dbname=$dbname" , $dbuser, $dbpass,
+            $this->dbh = $DBH = new PDO("$dbtype:host=$dbhost;dbname=$dbname" , $dbuser, $dbpass,
                 array (PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES 'utf8'")
             );
         }
@@ -70,9 +80,22 @@ class Database
         return $result;
     }
 
-    public function getOne($table, $id, $id_field_name='id')
+    public function getOne($table, $id, $filter='', $id_field_name='id')
     {
-        $sql = "SELECT * FROM `$table` WHERE `$id_field_name`='$id';";
+        $sql = "SELECT ";
+        if(empty($filter)) {
+            $sql .= "*";
+        }
+        else{
+            if(is_array($filter)){
+                $sql.=implode(',',$filter);
+            }
+            else{
+                $sql.=$filter;
+            }
+        }
+
+        $sql .= " FROM `$table` WHERE `$id_field_name`='$id';";
         $stmt = $this->dbh->query($sql);
         $stmt->setFetchMode(PDO::FETCH_ASSOC);
         $rows = $stmt->fetchAll();
@@ -134,7 +157,15 @@ class Database
             $stmt->bindParam(':'.$key, $data[$key]);
         }
         $success = $stmt->execute();
-        if(empty($success)) return false;
+
+        if(empty($success)) {
+            if(DEBUG){
+                print "ERROR:\n";
+                print_r($stmt->errorInfo());
+            }
+            return false;
+        }
+
         $lastID = $this->dbh->lastInsertId();
         return $lastID;
     }
