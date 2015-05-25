@@ -16,10 +16,14 @@ class Database
     public function errors()
     {
         $info = $this->dbh->errorInfo();
-        if(!empty($info[0])){
+        if(!empty($info[2])){
             if(DEBUG) print $info[2]."\n";
             if(function_exists('logMessage')) logMessage($info[2]);
         }
+    }
+
+    public function sayError(){
+        if(DEBUG) print_r($this->dbh->errorInfo());
     }
 
     public function __construct($input)
