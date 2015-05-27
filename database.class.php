@@ -20,13 +20,8 @@ class Database
     public function errors()
     {
         $info = $this->dbh->errorInfo();
-<<<<<<< HEAD
         if(!empty($info[2])){
             if(DEBUG) print $info[2]."\n";
-=======
-        if(!empty($info[0])){
-            if(DEBUG && !empty($info[2])) print $info[2]."\n";
->>>>>>> 9ef3cf0a19789148cd60704383eb630396785371
             if(function_exists('logMessage')) logMessage($info[2]);
         }
     }
