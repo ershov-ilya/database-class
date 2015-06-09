@@ -74,6 +74,7 @@ class Database
         $result = $rows[0];
 //        foreach($rows as $row){} // Изъятие из потока?
         $this->errors();
+        $this->last['getOneSQL']=$result;
         return $result;
     }
 
