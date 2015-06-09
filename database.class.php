@@ -104,7 +104,7 @@ class Database
         return $result;
     }
 
-    function pick($columns=NULL, $storage='getOne'){
+    function pick($columns=NULL, $storage='getOne', $map=array()){
         if($columns==NULL) {
             if(isset($this->last[$storage])) return $this->last[$storage];
             return NULL;
@@ -117,10 +117,14 @@ class Database
 
         $res=array();
         foreach($columns as $column){
-            if(isset($this->last[$storage][$column])) $res[$column]=$this->last[$storage][$column];
+            if(isset($this->last[$storage][$column])){
+                $resindex=$column;
+                if(isset($map[$column])) $resindex=$map[$column];
+                $res[$resindex]=$this->last[$storage][$column];
+            }
         }
 
-        if($columns_count==1) return $this->last[$storage][$column];
+        if($columns_count==1) return $res[$column];
         return $res;
     }
 
