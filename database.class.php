@@ -105,7 +105,7 @@ class Database
         return $result;
     }
 
-    function pick($columns=NULL, $storage='getOne', $map=array()){
+    function pick($columns=NULL, $map=array(), $storage='getOne'){
         if($columns==NULL) {
             if(isset($this->last[$storage])) return $this->last[$storage];
             return NULL;
@@ -127,6 +127,24 @@ class Database
 
         if($columns_count==1) return $res[$column];
         return $res;
+    }
+
+    function pickLine($field, $key, $map=array(), $storage='getTableByKey'){
+        $service=NULL;
+        foreach($this->last[$storage] as $arr){
+            if($arr[$field]==$key) $service=$arr;
+        }
+        if(empty($service)) return NULL;
+        unset($service['id']);
+        if(empty($map)) return $service;
+
+        $translated=array();
+        foreach($service as $k => $v){
+            $resindex=$k;
+            if(isset($map[$k])) $resindex=$map[$k];
+            $translated[$resindex]=$v;
+        }
+        return $translated;
     }
 
     public function get($sql)
@@ -152,6 +170,17 @@ class Database
         $stmt->setFetchMode(PDO::FETCH_ASSOC);
         $rows = $stmt->fetchAll();
         $this->errors();
+        return $rows;
+    }
+
+    public function getTableByKey($table, $key, $keyColumnName='scope')
+    {
+        $sql = "SELECT * FROM `$table` WHERE $keyColumnName='$key';";
+        $stmt = $this->dbh->query($sql);
+        $stmt->setFetchMode(PDO::FETCH_ASSOC);
+        $rows = $stmt->fetchAll();
+        $this->errors();
+        $this->last['getTableByKey']=$rows;
         return $rows;
     }
 
