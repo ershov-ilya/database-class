@@ -40,11 +40,18 @@ class Database
         switch($input_type)
         {
             case 'string':
+                // Ждём путь к файлу
                 /* @var array $pdoconfig */
-                require_once($input);
-                extract($pdoconfig);
+                if(is_file($input)) {
+                    require($input);
+                    extract($pdoconfig);
+                }
+                else{
+                    throw new Exception('Нет настроек БД',500);
+                }
                 break;
             case 'array':
+                // Массив с настройками
                 extract($input);
                 break;
         }
