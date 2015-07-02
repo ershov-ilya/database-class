@@ -129,6 +129,24 @@ class Database
         return $res;
     }
 
+    // Транспонирование (поворот) таблицы
+    function transpose($storage='getTable'){
+        $i=0;
+        $transpose=array();
+        $columns=array();
+        foreach($this->last[$storage][0] as $k => $v){
+            $columns[]=$k;
+        }
+        foreach($this->last[$storage] as $el){
+            foreach($columns as $column){
+                $transpose[$column][$i]=$el[$column];
+            }
+            $i++;
+        }
+        $this->last['group']=$transpose;
+        return $transpose;
+    }
+
     function pickLine($field, $key, $map=array(), $storage='getTableByKey'){
         $service=NULL;
         foreach($this->last[$storage] as $arr){
