@@ -136,6 +136,32 @@ class Database
         return $res;
     }
 
+    function pickLine($field, $key, $map=array(), $filter=array(), $storage='getTableByKey'){
+        $doFiltrate=false;
+        if(!empty($filter)){
+            $doFiltrate=true;
+            if(gettype($filter)=='string') $filter=explode(',',$filter);
+        }
+        $service=NULL;
+        foreach($this->last[$storage] as $arr){
+            if($arr[$field]==$key) $service=$arr;
+        }
+        if(empty($service)) return NULL;
+        unset($service['id']);
+        if(empty($map)) return $service;
+
+        $translated=array();
+        foreach($service as $k => $v){
+            $resindex=$k;
+            if(isset($map[$k])) $resindex=$map[$k];
+            $translated[$resindex]=$v;
+            if($doFiltrate && !in_array($resindex,$filter)){
+                unset($translated[$resindex]);
+            }
+        }
+        return $translated;
+    }
+
     // Транспонирование (поворот) таблицы
     function transpose($storage='getTable'){
         $i=0;
@@ -152,24 +178,6 @@ class Database
         }
         $this->last['group']=$transpose;
         return $transpose;
-    }
-
-    function pickLine($field, $key, $map=array(), $storage='getTableByKey'){
-        $service=NULL;
-        foreach($this->last[$storage] as $arr){
-            if($arr[$field]==$key) $service=$arr;
-        }
-        if(empty($service)) return NULL;
-        unset($service['id']);
-        if(empty($map)) return $service;
-
-        $translated=array();
-        foreach($service as $k => $v){
-            $resindex=$k;
-            if(isset($map[$k])) $resindex=$map[$k];
-            $translated[$resindex]=$v;
-        }
-        return $translated;
     }
 
     public function get($sql)
