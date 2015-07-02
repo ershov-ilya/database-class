@@ -153,6 +153,7 @@ class Database
         $stmt->setFetchMode(PDO::FETCH_ASSOC);
         $rows = $stmt->fetchAll();
         $this->errors();
+        $this->last['get']=$rows;
         return $rows;
     }
 
@@ -170,6 +171,7 @@ class Database
         $stmt->setFetchMode(PDO::FETCH_ASSOC);
         $rows = $stmt->fetchAll();
         $this->errors();
+        $this->last['getTable']=$rows;
         return $rows;
     }
 
@@ -192,6 +194,7 @@ class Database
         $rows = $stmt->fetchAll();
         $count = count($rows);
         $this->errors();
+        $this->last['getCount']=$rows;
         return $count;
     }
 
@@ -219,6 +222,7 @@ class Database
         }
 
         $lastID = $this->dbh->lastInsertId();
+        $this->last['putOne']=$lastID;
         return $lastID;
     }
 
