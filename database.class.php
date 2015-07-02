@@ -12,6 +12,7 @@ class Database
 {
     public $dbh; // Database handler
     public $cache;
+    public $last;
 
     public static function test(){
         return "Database class: OK";
@@ -33,6 +34,7 @@ class Database
     public function __construct($input)
     {
         $this->cache = false;
+        $this->last = array();
 
         $input_type=gettype($input);
         switch($input_type)
@@ -72,10 +74,11 @@ class Database
         $result = $rows[0];
 //        foreach($rows as $row){} // Изъятие из потока?
         $this->errors();
+        $this->last['getOneSQL']=$result;
         return $result;
     }
 
-    public function getOne($table, $id, $filter='', $id_field_name='id')
+    public function getOne($table, $id, $id_field_name='id', $filter='')
     {
         $sql = "SELECT ";
         if(empty($filter)) {
@@ -98,7 +101,50 @@ class Database
         $result = $rows[0];
 //        foreach($rows as $row){} // Изъятие из потока?
         $this->errors();
+        $this->last['getOne']=$result;
         return $result;
+    }
+
+    function pick($columns=NULL, $map=array(), $storage='getOne'){
+        if($columns==NULL) {
+            if(isset($this->last[$storage])) return $this->last[$storage];
+            return NULL;
+        }
+        if (is_string($columns)){
+            $columns=explode(',',$columns);
+        }
+
+        $columns_count=count($columns);
+
+        $res=array();
+        foreach($columns as $column){
+            if(isset($this->last[$storage][$column])){
+                $resindex=$column;
+                if(isset($map[$column])) $resindex=$map[$column];
+                $res[$resindex]=$this->last[$storage][$column];
+            }
+        }
+
+        if($columns_count==1) return $res[$column];
+        return $res;
+    }
+
+    function pickLine($field, $key, $map=array(), $storage='getTableByKey'){
+        $service=NULL;
+        foreach($this->last[$storage] as $arr){
+            if($arr[$field]==$key) $service=$arr;
+        }
+        if(empty($service)) return NULL;
+        unset($service['id']);
+        if(empty($map)) return $service;
+
+        $translated=array();
+        foreach($service as $k => $v){
+            $resindex=$k;
+            if(isset($map[$k])) $resindex=$map[$k];
+            $translated[$resindex]=$v;
+        }
+        return $translated;
     }
 
     public function get($sql)
@@ -124,6 +170,17 @@ class Database
         $stmt->setFetchMode(PDO::FETCH_ASSOC);
         $rows = $stmt->fetchAll();
         $this->errors();
+        return $rows;
+    }
+
+    public function getTableByKey($table, $key, $keyColumnName='scope')
+    {
+        $sql = "SELECT * FROM `$table` WHERE $keyColumnName='$key';";
+        $stmt = $this->dbh->query($sql);
+        $stmt->setFetchMode(PDO::FETCH_ASSOC);
+        $rows = $stmt->fetchAll();
+        $this->errors();
+        $this->last['getTableByKey']=$rows;
         return $rows;
     }
 
