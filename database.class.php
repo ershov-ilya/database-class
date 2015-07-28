@@ -295,22 +295,18 @@ class Database
             }
             $insert_values = array_merge($insert_values, array_values($row));
         }
-//        print_r($question_marks);
-//        print_r($insert_values);
-
         $sql  = "INSERT ";
         if($flags & DB_FLAG_IGNORE) $sql .= "IGNORE ";
         $sql .= "INTO `$table` (`" . implode("`,`", $fields ) . "`) VALUES " . implode(',', $question_marks);
-//        print 'sql:'.PHP_EOL;
-//        print $sql.PHP_EOL;
         $stmt = $this->dbh->prepare ($sql);
 
         try {
             $stmt->execute($insert_values);
         } catch (PDOException $e){
-//            echo $e->getMessage();
+            if(DEBUG) echo $e->getMessage();
+            if(function_exists('logMessage')) {logMessage($e->getMessage());}
         }
-        return $this->dbh->commit();;
+        return $this->dbh->commit();
     }
 
     public function updateOne($table, $id, $data, $id_field_name='id'){
