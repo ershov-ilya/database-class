@@ -22,8 +22,8 @@ class Database
     {
         $info = $this->dbh->errorInfo();
         if(!empty($info[2])){
-            if(DEBUG) print $info[2]."\n";
-            if(function_exists('logMessage')) logMessage($info[2]);
+            if(function_exists('logMessage')) {logMessage($info[2]);}
+            return $info[2];
         }
     }
 
@@ -33,6 +33,9 @@ class Database
 
     public function __construct($input)
     {
+        // Константы
+        define('DB_FLAG_IGNORE',1);
+
         $this->cache = false;
         $this->last = array();
 
@@ -231,14 +234,17 @@ class Database
         return $count;
     }
 
-    public function putOne($table, $data){
+    public function putOne($table, $data, $flags=0){
         $fields=array();
         $placeholders=array();
         foreach($data as $key => $val){
             $fields[]='`'.$key.'`';
             $placeholders[]=':'.$key;
         }
-        $sql = "INSERT INTO `".$table."` (".implode(', ',$fields).") VALUES (".implode(', ',$placeholders).");";
+
+        $sql  = "INSERT ";
+        if($flags & DB_FLAG_IGNORE) $sql .= "IGNORE ";
+        $sql .= "INTO `".$table."` (".implode(', ',$fields).") VALUES (".implode(', ',$placeholders).");";
 
         $stmt = $this->dbh->prepare($sql);
         foreach($data as $key => $val){
