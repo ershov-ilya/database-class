@@ -18,23 +18,19 @@ class Database
         return "Database class: OK";
     }
 
-    public function errors()
-    {
-        $info = $this->dbh->errorInfo();
-        if(!empty($info[2])){
-            if(function_exists('logMessage')) {logMessage($info[2]);}
-            return $info[2];
-        }
-    }
-
-    public function sayError(){
-        if(DEBUG) print_r($this->dbh->errorInfo());
-    }
-
     public function __construct($input)
     {
-        // Константы
-        define('DB_FLAG_IGNORE',1);
+        // Class option flags constants
+        $constants = array(
+            'DB_FLAG_IGNORE',
+            'DB_FLAG_UPDATE',
+            'DB_FLAG_UNNAMED'
+        );
+        $i=1;
+        foreach($constants as $constant){
+            define($constant, $i);
+            $i*=2;
+        }
 
         $this->cache = false;
         $this->last = array();
@@ -74,6 +70,19 @@ class Database
             exit();
         }
     } // function __construct
+
+    public function errors()
+    {
+        $info = $this->dbh->errorInfo();
+        if(!empty($info[2])){
+            if(function_exists('logMessage')) {logMessage($info[2]);}
+            return $info[2];
+        }
+    }
+
+    public function sayError(){
+        if(DEBUG) print_r($this->dbh->errorInfo());
+    }
 
     public function getOneSQL($sql)
     {
@@ -263,6 +272,51 @@ class Database
         $lastID = $this->dbh->lastInsertId();
         $this->last['putOne']=$lastID;
         return $lastID;
+    }
+
+    private function placeholders($text, $count=0, $separator=","){
+        $result = array();
+        if($count > 0){
+            for($x=0; $x<$count; $x++){
+                $result[] = $text;
+            }
+        }
+
+        return implode($separator, $result);
+    }
+
+    public function put($table, $fields, $data, $flags=0){
+        $this->dbh->beginTransaction();
+        if(empty($fields) || empty($data)) return false;
+        if(gettype($fields)=='string') $fields=explode(',',$fields);
+
+        $questions='('  . $this->placeholders('?', sizeof($fields)) . ')';
+        $question_marks = array();
+        $insert_values = array();
+        foreach($data as $d){
+            $question_marks[] = $questions;
+            $row=array();
+            foreach($fields as $k => $v){
+                $row[$k]=$d[$v];
+            }
+            $insert_values = array_merge($insert_values, array_values($row));
+        }
+//        print_r($question_marks);
+//        print_r($insert_values);
+
+        $sql  = "INSERT ";
+        if($flags & DB_FLAG_IGNORE) $sql .= "IGNORE ";
+        $sql .= "INTO `$table` (`" . implode("`,`", $fields ) . "`) VALUES " . implode(',', $question_marks);
+//        print 'sql:'.PHP_EOL;
+//        print $sql.PHP_EOL;
+        $stmt = $this->dbh->prepare ($sql);
+
+        try {
+            $stmt->execute($insert_values);
+        } catch (PDOException $e){
+//            echo $e->getMessage();
+        }
+        return $this->dbh->commit();;
     }
 
     public function updateOne($table, $id, $data, $id_field_name='id'){
