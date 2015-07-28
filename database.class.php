@@ -278,7 +278,7 @@ class Database
         return implode($separator, $result);
     }
 
-    public function put($table, $fields, $data, $flags=0, $overlay=array()){
+    public function put($table, $fields, $data, $flags=0, $overlay=array(), $default=NULL){
         $this->dbh->beginTransaction();
         if(empty($fields) || empty($data)) return false;
         if(gettype($fields)=='string') $fields=explode(',',$fields);
@@ -295,7 +295,7 @@ class Database
                     if(gettype($d[$v])=='string') $row[$k] = $d[$v];
                     else $row[$k] = serialize($d[$v]);
                 }
-                else $row[$k]='';
+                else $row[$k]=$default;
             }
             $insert_values = array_merge($insert_values, array_values($row));
         }
