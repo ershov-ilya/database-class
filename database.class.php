@@ -305,7 +305,6 @@ class Database
         $stmt = $this->dbh->prepare ($sql);
 
         try {
-            print_r($insert_values);
             $stmt->execute($insert_values);
         } catch (PDOException $e){
             if(DEBUG) echo $e->getMessage();
