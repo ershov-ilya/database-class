@@ -21,16 +21,9 @@ class Database
     public function __construct($input)
     {
         // Class option flags constants
-        $constants = array(
-            'DB_FLAG_IGNORE',
-            'DB_FLAG_UPDATE',
-            'DB_FLAG_UNNAMED'
-        );
-        $i=1;
-        foreach($constants as $constant){
-            define($constant, $i);
-            $i*=2;
-        }
+        define('DB_FLAG_IGNORE', 1);
+        define('DB_FLAG_UPDATE', 2);
+        define('DB_FLAG_UNNAMED',4);
 
         $this->cache = false;
         $this->last = array();
@@ -285,7 +278,7 @@ class Database
         return implode($separator, $result);
     }
 
-    public function put($table, $fields, $data, $flags=0){
+    public function put($table, $fields, $data, $flags=0, $overlay=array()){
         $this->dbh->beginTransaction();
         if(empty($fields) || empty($data)) return false;
         if(gettype($fields)=='string') $fields=explode(',',$fields);
@@ -297,7 +290,8 @@ class Database
             $question_marks[] = $questions;
             $row=array();
             foreach($fields as $k => $v){
-                $row[$k]=$d[$v];
+                if(isset($overlay[$v])) $row[$k]=$overlay[$v]; // Overlay
+                else $row[$k]=$d[$v];
             }
             $insert_values = array_merge($insert_values, array_values($row));
         }
