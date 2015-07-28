@@ -289,9 +289,9 @@ class Database
         foreach($data as $d){
             $question_marks[] = $questions;
             $row=array();
+            $d=array_merge($d, $overlay);
             foreach($fields as $k => $v){
-                if(isset($overlay[$v])) $row[$k]=$overlay[$v]; // Overlay
-                else $row[$k]=$d[$v];
+                $row[$k]=$d[$v];
             }
             $insert_values = array_merge($insert_values, array_values($row));
         }
