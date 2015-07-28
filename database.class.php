@@ -291,7 +291,11 @@ class Database
             $row=array();
             $d=array_merge($d, $overlay);
             foreach($fields as $k => $v){
-                $row[$k]=$d[$v];
+                if(isset($d[$v])) {
+                    if(gettype($d[$v])=='string') $row[$k] = $d[$v];
+                    else $row[$k] = serialize($d[$v]);
+                }
+                else $row[$k]='';
             }
             $insert_values = array_merge($insert_values, array_values($row));
         }
@@ -301,6 +305,7 @@ class Database
         $stmt = $this->dbh->prepare ($sql);
 
         try {
+            print_r($insert_values);
             $stmt->execute($insert_values);
         } catch (PDOException $e){
             if(DEBUG) echo $e->getMessage();
