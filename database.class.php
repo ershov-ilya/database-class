@@ -84,7 +84,6 @@ class Database
         $rows = $stmt->fetchAll();
         if(empty($rows)) return array();
         $result = $rows[0];
-//        foreach($rows as $row){} // Изъятие из потока?
         $this->errors();
         $this->last['getOneSQL']=$result;
         return $result;
@@ -111,9 +110,29 @@ class Database
         $rows = $stmt->fetchAll();
         if(empty($rows)) return array();
         $result = $rows[0];
-//        foreach($rows as $row){} // Изъятие из потока?
         $this->errors();
         $this->last['getOne']=$result;
+        return $result;
+    }
+
+    public function getOneWhere($table, $where='1', $filter='')
+    {
+        $sql = "SELECT ";
+        if(empty($filter)) { $sql .= "*"; }
+        else
+        {
+            if(is_array($filter)){ $sql.=implode(',',$filter); }
+            else{ $sql.=$filter; }
+        }
+
+        $sql .= " FROM `$table` WHERE $where LIMIT 1;";
+        $stmt = $this->dbh->query($sql);
+        $stmt->setFetchMode(PDO::FETCH_ASSOC);
+        $rows = $stmt->fetchAll();
+        if(empty($rows)) return array();
+        $result = $rows[0];
+        $this->errors();
+        $this->last['getOneWhere']=$result;
         return $result;
     }
 
