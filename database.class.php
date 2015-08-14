@@ -122,8 +122,9 @@ class Database
         if(empty($filter)) { $sql .= "*"; }
         else
         {
-            if(is_array($filter)){ $sql.=implode(',',$filter); }
-            else{ $sql.=$filter; }
+            if(gettype($filter)=='string'){ $filter=explode(',',$filter); }
+            if(is_array($filter)) { $filter=implode('`,`',$filter); }
+            $sql.='`'.$filter.'`';
         }
 
         $sql .= " FROM `$table` WHERE $where LIMIT 1;";
