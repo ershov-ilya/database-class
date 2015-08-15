@@ -21,9 +21,9 @@ class Database
     public function __construct($input)
     {
         // Class option flags constants
-        define('DB_FLAG_IGNORE', 1);
-        define('DB_FLAG_UPDATE', 2);
-        define('DB_FLAG_UNNAMED',4);
+        defined('DB_FLAG_IGNORE')  or define('DB_FLAG_IGNORE', 1);
+        defined('DB_FLAG_UPDATE')  or define('DB_FLAG_UPDATE', 2);
+        defined('DB_FLAG_UNNAMED') or define('DB_FLAG_UNNAMED',4);
 
         $this->cache = false;
         $this->last = array();
