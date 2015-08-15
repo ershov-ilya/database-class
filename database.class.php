@@ -18,21 +18,13 @@ class Database
         return "Database class: OK";
     }
 
-    public function errors()
-    {
-        $info = $this->dbh->errorInfo();
-        if(!empty($info[2])){
-            if(DEBUG) print $info[2]."\n";
-            if(function_exists('logMessage')) logMessage($info[2]);
-        }
-    }
-
-    public function sayError(){
-        if(DEBUG) print_r($this->dbh->errorInfo());
-    }
-
     public function __construct($input)
     {
+        // Class option flags constants
+        define('DB_FLAG_IGNORE', 1);
+        define('DB_FLAG_UPDATE', 2);
+        define('DB_FLAG_UNNAMED',4);
+
         $this->cache = false;
         $this->last = array();
 
@@ -68,9 +60,23 @@ class Database
         catch (PDOException $e ) {
             if(DEBUG) print 'Exception: ' . $e-> getMessage();
             logMessage('Exception: ' . $e-> getMessage());
+            $this->dbh = null;
             exit();
         }
     } // function __construct
+
+    public function errors()
+    {
+        $info = $this->dbh->errorInfo();
+        if(!empty($info[2])){
+            if(function_exists('logMessage')) {logMessage($info[2]);}
+            return $info[2];
+        }
+    }
+
+    public function sayError(){
+        if(DEBUG) print_r($this->dbh->errorInfo());
+    }
 
     public function getOneSQL($sql)
     {
@@ -79,7 +85,6 @@ class Database
         $rows = $stmt->fetchAll();
         if(empty($rows)) return array();
         $result = $rows[0];
-//        foreach($rows as $row){} // Изъятие из потока?
         $this->errors();
         $this->last['getOneSQL']=$result;
         return $result;
@@ -106,27 +111,49 @@ class Database
         $rows = $stmt->fetchAll();
         if(empty($rows)) return array();
         $result = $rows[0];
-//        foreach($rows as $row){} // Изъятие из потока?
         $this->errors();
         $this->last['getOne']=$result;
         return $result;
     }
 
-    public function toKeyValue($storage='getTable'){
-        $res=array();
-        foreach($this->last[$storage] as $row){
-            $i=0;
-            $key='';
-            $val='';
-            foreach($row as $field){
-                if($i==0) $key=$field;
-                if($i==1) $val=$field;
+    public function toKeyValue($storage='getTable')
+    {
+        $res = array();
+        foreach ($this->last[$storage] as $row) {
+            $i = 0;
+            $key = '';
+            $val = '';
+            foreach ($row as $field) {
+                if ($i == 0) $key = $field;
+                if ($i == 1) $val = $field;
                 $i++;
-                if($i>1) break;
+                if ($i > 1) break;
             }
-            $res[$key]=$val;
+            $res[$key] = $val;
         }
         return $res;
+    }
+
+    public function getOneWhere($table, $where='1', $filter='')
+    {
+        $sql = "SELECT ";
+        if(empty($filter)) { $sql .= "*"; }
+        else
+        {
+            if(gettype($filter)=='string'){ $filter=explode(',',$filter); }
+            if(is_array($filter)) { $filter=implode('`,`',$filter); }
+            $sql.='`'.$filter.'`';
+        }
+
+        $sql .= " FROM `$table` WHERE $where LIMIT 1;";
+        $stmt = $this->dbh->query($sql);
+        $stmt->setFetchMode(PDO::FETCH_ASSOC);
+        $rows = $stmt->fetchAll();
+        if(empty($rows)) return array();
+        $result = $rows[0];
+        $this->errors();
+        $this->last['getOneWhere']=$result;
+        return $result;
     }
 
     function pick($columns=NULL, $map=array(), $storage='getOne'){
@@ -249,14 +276,17 @@ class Database
         return $count;
     }
 
-    public function putOne($table, $data){
+    public function putOne($table, $data, $flags=0){
         $fields=array();
         $placeholders=array();
         foreach($data as $key => $val){
             $fields[]='`'.$key.'`';
             $placeholders[]=':'.$key;
         }
-        $sql = "INSERT INTO `".$table."` (".implode(', ',$fields).") VALUES (".implode(', ',$placeholders).");";
+
+        $sql  = "INSERT ";
+        if($flags & DB_FLAG_IGNORE) $sql .= "IGNORE ";
+        $sql .= "INTO `".$table."` (".implode(', ',$fields).") VALUES (".implode(', ',$placeholders).");";
 
         $stmt = $this->dbh->prepare($sql);
         foreach($data as $key => $val){
@@ -275,6 +305,52 @@ class Database
         $lastID = $this->dbh->lastInsertId();
         $this->last['putOne']=$lastID;
         return $lastID;
+    }
+
+    private function placeholders($text, $count=0, $separator=","){
+        $result = array();
+        if($count > 0){
+            for($x=0; $x<$count; $x++){
+                $result[] = $text;
+            }
+        }
+
+        return implode($separator, $result);
+    }
+
+    public function put($table, $fields, $data, $flags=0, $overlay=array(), $default=NULL){
+        $this->dbh->beginTransaction();
+        if(empty($fields) || empty($data)) return false;
+        if(gettype($fields)=='string') $fields=explode(',',$fields);
+
+        $questions='('  . $this->placeholders('?', sizeof($fields)) . ')';
+        $question_marks = array();
+        $insert_values = array();
+        foreach($data as $d){
+            $question_marks[] = $questions;
+            $row=array();
+            $d=array_merge($d, $overlay);
+            foreach($fields as $k => $v){
+                if(isset($d[$v])) {
+                    if(gettype($d[$v])=='string') $row[$k] = $d[$v];
+                    else $row[$k] = serialize($d[$v]);
+                }
+                else $row[$k]=$default;
+            }
+            $insert_values = array_merge($insert_values, array_values($row));
+        }
+        $sql  = "INSERT ";
+        if($flags & DB_FLAG_IGNORE) $sql .= "IGNORE ";
+        $sql .= "INTO `$table` (`" . implode("`,`", $fields ) . "`) VALUES " . implode(',', $question_marks);
+        $stmt = $this->dbh->prepare ($sql);
+
+        try {
+            $stmt->execute($insert_values);
+        } catch (PDOException $e){
+            if(DEBUG) echo $e->getMessage();
+            if(function_exists('logMessage')) {logMessage($e->getMessage());}
+        }
+        return $this->dbh->commit();
     }
 
     public function updateOne($table, $id, $data, $id_field_name='id'){
