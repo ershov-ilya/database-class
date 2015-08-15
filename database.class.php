@@ -112,6 +112,23 @@ class Database
         return $result;
     }
 
+    public function toKeyValue($storage='getTable'){
+        $res=array();
+        foreach($this->last[$storage] as $row){
+            $i=0;
+            $key='';
+            $val='';
+            foreach($row as $field){
+                if($i==0) $key=$field;
+                if($i==1) $val=$field;
+                $i++;
+                if($i>1) break;
+            }
+            $res[$key]=$val;
+        }
+        return $res;
+    }
+
     function pick($columns=NULL, $map=array(), $storage='getOne'){
         if($columns==NULL) {
             if(isset($this->last[$storage])) return $this->last[$storage];
@@ -196,6 +213,7 @@ class Database
         if(isset($limit) && $limit>=0) $page = "LIMIT $from, $limit";
         if(empty($columns)) $sql = "SELECT * FROM `$table` $page;";
         else{
+            if(gettype($columns)=='string') $columns=explode(',',$columns);
             if(is_array($columns)) $columns = "`".implode("`,`",$columns)."`";
             $columns = preg_replace('/;/', '', $columns);
             $sql = "SELECT $columns FROM `$table` $page;";
@@ -210,7 +228,7 @@ class Database
 
     public function getTableByKey($table, $key, $keyColumnName='scope')
     {
-        $sql = "SELECT * FROM `$table` WHERE $keyColumnName='$key';";
+        $sql = "SELECT * FROM `".$table."` WHERE $keyColumnName='".$key."';";
         $stmt = $this->dbh->query($sql);
         $stmt->setFetchMode(PDO::FETCH_ASSOC);
         $rows = $stmt->fetchAll();
