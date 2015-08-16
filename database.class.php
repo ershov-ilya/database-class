@@ -276,6 +276,19 @@ class Database
         return $count;
     }
 
+    public function Count($table, $where)
+    {
+        $sql='SELECT COUNT(*) as count FROM `'.$table.'` WHERE '.$where;
+        $stmt = $this->dbh->query($sql);
+        $stmt->setFetchMode(PDO::FETCH_ASSOC);
+        $rows = $stmt->fetchAll();
+        $res=$rows[0]['count'];
+        $this->errors();
+        $this->last['Count']=$res;
+        return $res;
+    }
+
+
     public function putOne($table, $data, $flags=0){
         $fields=array();
         $placeholders=array();
