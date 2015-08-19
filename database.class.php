@@ -12,7 +12,7 @@
 defined('DB_FLAG_IGNORE')  or define('DB_FLAG_IGNORE', 1);
 defined('DB_FLAG_UPDATE')  or define('DB_FLAG_UPDATE', 2);
 defined('DB_FLAG_UNNAMED') or define('DB_FLAG_UNNAMED',4);
-defined('DB_ENABLE_FILTER') or define('DB_ENABLE_FILTER',8);
+defined('DB_FILTER') or define('DB_FILTER',8);
 
 class Database
 {
@@ -81,7 +81,7 @@ class Database
 
     public static function translate($source=array(), $map=array(), $flags=0){
         $result=array();
-        $fFilter=$flags & DB_ENABLE_FILTER;
+        $fFilter=$flags & DB_FILTER;
         var_dump($fFilter);
         foreach($source as $k => $v){
             if(isset($map[$k])){
