@@ -8,6 +8,12 @@
  * Time: 0:32
  */
 
+// Class option flags constants
+defined('DB_FLAG_IGNORE')  or define('DB_FLAG_IGNORE', 1);
+defined('DB_FLAG_UPDATE')  or define('DB_FLAG_UPDATE', 2);
+defined('DB_FLAG_UNNAMED') or define('DB_FLAG_UNNAMED',4);
+defined('DB_ENABLE_FILTER') or define('DB_ENABLE_FILTER',8);
+
 class Database
 {
     public $dbh; // Database handler
@@ -20,11 +26,6 @@ class Database
 
     public function __construct($input)
     {
-        // Class option flags constants
-        defined('DB_FLAG_IGNORE')  or define('DB_FLAG_IGNORE', 1);
-        defined('DB_FLAG_UPDATE')  or define('DB_FLAG_UPDATE', 2);
-        defined('DB_FLAG_UNNAMED') or define('DB_FLAG_UNNAMED',4);
-
         $this->cache = false;
         $this->last = array();
 
@@ -76,6 +77,20 @@ class Database
 
     public function sayError(){
         if(DEBUG) print_r($this->dbh->errorInfo());
+    }
+
+    public static function translate($source=array(), $map=array(), $flags=0){
+        $result=array();
+        $fFilter=$flags & DB_ENABLE_FILTER;
+        var_dump($fFilter);
+        foreach($source as $k => $v){
+            if(isset($map[$k])){
+                $result[$map[$k]]=$v;
+            }else{
+                if(!$fFilter) $result[$k]=$v;
+            }
+        }
+        return $result;
     }
 
     public function getOneSQL($sql)
@@ -266,7 +281,7 @@ class Database
 
     public function getCount($sql)
     {
-        // TODO: Неэкономичная функция, надо поправить
+        // Неэкономичная функция, надо поправить
         $stmt = $this->dbh->query($sql);
         $stmt->setFetchMode(PDO::FETCH_ASSOC);
         $rows = $stmt->fetchAll();
