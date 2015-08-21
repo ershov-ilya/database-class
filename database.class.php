@@ -428,4 +428,46 @@ class Database
         if($success) return true;
         return false;
     }
+
+    public static function makeWhere($data, $fields=array()){
+        $where="1";
+        foreach($data as $k=>$v){
+            switch($k){
+                case 'month':
+                    if(empty($data['year'])){
+                        $yearCurrent=date('Y');
+                        $yearTo=$yearCurrent;
+                        $monthCurrent=$v;
+                        $monthTo=$v+1;
+                        if($monthTo>12){
+                            $yearTo++;
+                            $monthTo="01";
+                        }
+                        $where.=" AND time >= '$yearCurrent-$monthCurrent-01' AND time < '$yearTo-$monthTo-01'";
+                    }
+                    break;
+                case 'year':
+                    $yearCurrent=$v;
+                    $monthCurrent=1;
+                    $yearTo=$yearCurrent+1;
+                    $monthTo=1;
+                    if(!empty($data['month'])) {
+                        $yearTo=$yearCurrent;
+                        $monthCurrent = $data['month'];
+                        $monthTo = $monthCurrent + 1;
+                        if ($monthTo > 12) {
+                            $yearTo++;
+                            $monthTo = "01";
+                        }
+                    }
+//                    if($monthTo<10)$monthTo='0'.$monthTo;
+//                    if($monthCurrent<10)$monthCurrent='0'.$monthCurrent;
+                    $where.=" AND time >= '$yearCurrent-$monthCurrent-01' AND time < '$yearTo-$monthTo-01'";
+                    break;
+                default:
+                    $where.=" AND `$k`='$v'";
+            }
+        }
+        return $where;
+    }
 } // class Database
