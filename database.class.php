@@ -270,6 +270,8 @@ class Database
 
     public function getTableWhere($table, $columns='', $where='1')
     {
+        // Если where - массив, автоматически пропарсить его в makeFilterWhere
+        if(gettype($where)=='array') $where=Database::makeFilterWhere($where);
         $sql = "SELECT";
         if(empty($columns)) $sql .= " *";
         else{
@@ -429,7 +431,7 @@ class Database
         return false;
     }
 
-    public static function makeWhere($data, $fields=array()){
+    public static function makeFilterWhere($data, $fields=array()){
         $where="1";
         foreach($data as $k=>$v){
             switch($k){
