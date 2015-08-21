@@ -268,6 +268,26 @@ class Database
         return $rows;
     }
 
+    public function getTableWhere($table, $columns='', $where='1')
+    {
+        $sql = "SELECT";
+        if(empty($columns)) $sql .= " *";
+        else{
+            if(gettype($columns)=='string') $columns=explode(',',$columns);
+            if(is_array($columns)) $columns = "`".implode("`,`",$columns)."`";
+            $columns = preg_replace('/;/', '', $columns);
+            $sql .= "$columns";
+        }
+        $sql .= " FROM `$table`";
+        $sql .= " WHERE $where";
+        $stmt = $this->dbh->query($sql);
+        $stmt->setFetchMode(PDO::FETCH_ASSOC);
+        $rows = $stmt->fetchAll();
+        $this->errors();
+        $this->last['getTable']=$rows;
+        return $rows;
+    }
+
     public function getTableByKey($table, $key, $keyColumnName='scope')
     {
         $sql = "SELECT * FROM `".$table."` WHERE $keyColumnName='".$key."';";
