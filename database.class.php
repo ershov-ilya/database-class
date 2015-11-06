@@ -406,6 +406,7 @@ class Database
     public function updateOne($table, $id, $data, $id_field_name='id'){
         $fields=array();
         $placeholders=array();
+        unset($data[$id_field_name]);
         foreach($data as $key => $val){
             $fields[]='`'.$key.'`';
             $placeholders[]=':'.$key;
