@@ -431,10 +431,12 @@ class Database
         return false;
     }
 
+    // Для увеличения быстродействия функция не следит за однородностью данных - за этим нужно следить перед передачей данных в функцию
+    // В противном случае данные могут перемешаться по столбцам
     public function updateMass($table, $data, $overlay=array(), $id_field_name='id'){
         if(empty($data)) return false;
         $id_field_name='`'.$id_field_name.'`';
-//        $this->dbh->beginTransaction();
+        $this->dbh->beginTransaction();
         /*
          * INSERT INTO table (id,Col1,Col2) VALUES (1,1,1),(2,2,3),(3,9,3),(4,10,12)
          * ON DUPLICATE KEY UPDATE Col1=VALUES(Col1),Col2=VALUES(Col2);
@@ -456,10 +458,7 @@ class Database
         $insert_values = array();
         foreach($data as $d){
             $d=array_merge($d, $overlay);
-            $insert_values[]=$d;
-//            $str="('";
-//            $str.=implode("','",$d);
-//            $str.="')";
+            $insert_values = array_merge($insert_values, array_values($d));
             $question_marks[]=$questions;
         }
         $sql .= implode(',',$question_marks);
@@ -475,26 +474,15 @@ class Database
         }
         $sql .= implode(',',$rows)." ";
 
-        print($sql);
-        print_r($insert_values);
-        die;
-        $count = count($data);
-        $i=0;
-        foreach($data as $key => $val){
-            $sql .= "`$key`=:$key";
-            $i++;
-            if($i<$count) $sql .= ",";
-            $sql .= " ";
-        }
-        $sql .= " WHERE `$id_field_name`='".$id."';";
+        $stmt = $this->dbh->prepare ($sql);
 
-        $stmt = $this->dbh->prepare($sql);
-        foreach($data as $key => $val){
-            $stmt->bindParam(':'.$key, $data[$key]);
+        try {
+            $stmt->execute($insert_values);
+        } catch (PDOException $e){
+            if(DEBUG) echo $e->getMessage();
+            if(function_exists('logMessage')) {logMessage($e->getMessage());}
         }
-        $success = $stmt->execute();
-        if($success) return true;
-        return false;
+        return $this->dbh->commit();
     }
 
     public static function makeFilterWhere($data, $fields=array()){
