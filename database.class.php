@@ -431,32 +431,38 @@ class Database
         return false;
     }
 
-    public function updateMass($table, $data, $id_field_name='id'){
+    public function updateMass($table, $data, $overlay=array(), $id_field_name='id'){
         if(empty($data)) return false;
+        $id_field_name='`'.$id_field_name.'`';
 //        $this->dbh->beginTransaction();
         /*
          * INSERT INTO table (id,Col1,Col2) VALUES (1,1,1),(2,2,3),(3,9,3),(4,10,12)
          * ON DUPLICATE KEY UPDATE Col1=VALUES(Col1),Col2=VALUES(Col2);
          */
-//        print_r($data);
         $fields=array();
         $placeholders=array();
-        foreach($data[0] as $key => $val){
+        $first_line=array_merge($data[0],$overlay);
+        foreach($first_line as $key => $val){
             $fields[]='`'.$key.'`';
             $placeholders[]=':'.$key;
         }
+
         $sql = "INSERT INTO `".$table."` ";
         $sql .= "(".implode(',',$fields).")";
         $sql .= " VALUES ";
 
-        $rows=array();
-        foreach($data as $row){
-            $str="('";
-            $str.=implode("','",$row);
-            $str.="')";
-            $rows[]=$str;
+        $questions='('  . $this->placeholders('?', sizeof($fields)) . ')';
+        $question_marks = array();
+        $insert_values = array();
+        foreach($data as $d){
+            $d=array_merge($d, $overlay);
+            $insert_values[]=$d;
+//            $str="('";
+//            $str.=implode("','",$d);
+//            $str.="')";
+            $question_marks[]=$questions;
         }
-        $sql .= " ".implode(',',$rows)." ";
+        $sql .= implode(',',$question_marks);
 
         $sql .= " ON DUPLICATE KEY UPDATE ";
 
@@ -467,10 +473,10 @@ class Database
             $str="$field=VALUES($field)";
             $rows[]=$str;
         }
-        $sql .= " ".implode(',',$rows)." ";
-
+        $sql .= implode(',',$rows)." ";
 
         print($sql);
+        print_r($insert_values);
         die;
         $count = count($data);
         $i=0;
