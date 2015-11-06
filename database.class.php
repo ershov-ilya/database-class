@@ -431,22 +431,50 @@ class Database
         return false;
     }
 
-    // Для увеличения быстродействия функция не следит за однородностью данных - за этим нужно следить перед передачей данных в функцию
+    // Для увеличения быстродействия функция может не следить за однородностью данных
+    // за это отвечает параметр $props['fastmode']
     // В противном случае данные могут перемешаться по столбцам
-    public function updateMass($table, $data, $overlay=array(), $id_field_name='id'){
+    public function updateMass($table, $data, $props=array()){
         if(empty($data)) return false;
+        $config=array(
+            'fields'    =>  NULL,
+            'overlay'   =>  array(),
+            'id_field_name' => 'id',
+            'fastmode'      => false
+        );
+        $props=array_merge($config, $props);
+        extract($props);
         $id_field_name='`'.$id_field_name.'`';
         $this->dbh->beginTransaction();
+
         /*
          * INSERT INTO table (id,Col1,Col2) VALUES (1,1,1),(2,2,3),(3,9,3),(4,10,12)
          * ON DUPLICATE KEY UPDATE Col1=VALUES(Col1),Col2=VALUES(Col2);
          */
-        $fields=array();
-        $placeholders=array();
-        $first_line=array_merge($data[0],$overlay);
-        foreach($first_line as $key => $val){
-            $fields[]='`'.$key.'`';
-            $placeholders[]=':'.$key;
+        if(empty($fields)) {
+            $fields = array();
+            $first_line = array_merge($data[0], $overlay);
+            foreach ($first_line as $key => $val) {
+                $fields[] = $key;
+            }
+        }else{
+            if(gettype($fields)=='string') $fields=explode(',',$fields);
+        }
+
+        if(!$fastmode){
+            foreach($data as $k=>$r){
+                foreach($r as $f=>$v){
+                    if(!in_array($f,$fields)){
+                        unset($data[$k][$f]);
+                    }
+                }
+                $enlisted=array_keys($r);
+                foreach($fields as $f){
+                    if(!in_array($f,$enlisted)){
+                        $data[$k][$f]='';
+                    }
+                }
+            }
         }
 
         $sql = "INSERT INTO `".$table."` ";
@@ -458,6 +486,9 @@ class Database
         $insert_values = array();
         foreach($data as $d){
             $d=array_merge($d, $overlay);
+            foreach($d as $k=>$v){
+
+            }
             $insert_values = array_merge($insert_values, array_values($d));
             $question_marks[]=$questions;
         }
@@ -472,7 +503,7 @@ class Database
             $str="$field=VALUES($field)";
             $rows[]=$str;
         }
-        $sql .= implode(',',$rows)." ";
+        $sql .= implode(',',$rows);
 
         $stmt = $this->dbh->prepare ($sql);
 
