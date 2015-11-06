@@ -369,8 +369,8 @@ class Database
     }
 
     public function put($table, $fields, $data, $flags=0, $overlay=array(), $default=NULL){
-        $this->dbh->beginTransaction();
         if(empty($fields) || empty($data)) return false;
+        $this->dbh->beginTransaction();
         if(gettype($fields)=='string') $fields=explode(',',$fields);
 
         $questions='('  . $this->placeholders('?', sizeof($fields)) . ')';
@@ -431,7 +431,9 @@ class Database
         return false;
     }
 
-    public function updateMass($table, $data, $id_name='id', $id_field_name='id'){
+    public function updateMass($table, $data, $id_field_name='id'){
+        if(empty($data)) return false;
+//        $this->dbh->beginTransaction();
         /*
          * INSERT INTO table (id,Col1,Col2) VALUES (1,1,1),(2,2,3),(3,9,3),(4,10,12)
          * ON DUPLICATE KEY UPDATE Col1=VALUES(Col1),Col2=VALUES(Col2);
@@ -447,15 +449,26 @@ class Database
         $sql .= "(".implode(',',$fields).")";
         $sql .= " VALUES ";
 
-        $sql .= " ... ";
-        $rows='';
+        $rows=array();
         foreach($data as $row){
-
+            $str="('";
+            $str.=implode("','",$row);
+            $str.="')";
+            $rows[]=$str;
         }
-
-
+        $sql .= " ".implode(',',$rows)." ";
 
         $sql .= " ON DUPLICATE KEY UPDATE ";
+
+        $rows=array();
+        foreach($fields as $field){
+            if($field==$id_field_name) continue;
+            //field=VALUES(field)
+            $str="$field=VALUES($field)";
+            $rows[]=$str;
+        }
+        $sql .= " ".implode(',',$rows)." ";
+
 
         print($sql);
         die;
