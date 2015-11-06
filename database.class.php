@@ -105,6 +105,14 @@ class Database
         return $result;
     }
 
+    public function exec($sql)
+    {
+        $count = $this->dbh->exec($sql);
+        $this->errors();
+        $this->last['exec']=$count;
+        return $count;
+    }
+
     public function getOne($table, $id, $id_field_name='id', $filter='')
     {
         $sql = "SELECT ";
