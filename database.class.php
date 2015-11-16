@@ -60,7 +60,7 @@ class Database
         }
         catch (PDOException $e ) {
             if(DEBUG) print 'Exception: ' . $e-> getMessage();
-            logMessage('Exception: ' . $e-> getMessage());
+            if(function_exists('logMessage')) logMessage('Exception: ' . $e-> getMessage());
             $this->dbh = null;
             exit();
         }
