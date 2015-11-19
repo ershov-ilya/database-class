@@ -68,6 +68,7 @@ class Database
 
     public function errors()
     {
+        if(empty($this->dbh)) return false;
         $info = $this->dbh->errorInfo();
         if(!empty($info[2])){
             if(function_exists('logMessage')) {logMessage($info[2]);}
@@ -95,6 +96,7 @@ class Database
 
     public function getOneSQL($sql)
     {
+        if(empty($this->dbh)) return false;
         $stmt = $this->dbh->query($sql);
         $stmt->setFetchMode(PDO::FETCH_ASSOC);
         $rows = $stmt->fetchAll();
@@ -107,6 +109,7 @@ class Database
 
     public function exec($sql)
     {
+        if(empty($this->dbh)) return false;
         $count = $this->dbh->exec($sql);
         $this->errors();
         $this->last['exec']=$count;
@@ -115,6 +118,7 @@ class Database
 
     public function getOne($table, $id, $id_field_name='id', $filter='')
     {
+        if(empty($this->dbh)) return false;
         $sql = "SELECT ";
         if(empty($filter)) {
             $sql .= "*";
@@ -174,6 +178,7 @@ class Database
 
     public function getOneWhere($table, $where='1', $filter='')
     {
+        if(empty($this->dbh)) return false;
         $sql = "SELECT ";
         if(empty($filter)) { $sql .= "*"; }
         else
@@ -264,6 +269,7 @@ class Database
 
     public function get($sql)
     {
+        if(empty($this->dbh)) return false;
         $stmt = $this->dbh->query($sql);
         $stmt->setFetchMode(PDO::FETCH_ASSOC);
         $rows = $stmt->fetchAll();
@@ -274,6 +280,7 @@ class Database
 
     public function getTable($table, $columns='', $from=0, $limit=-1)
     {
+        if(empty($this->dbh)) return false;
         $page='';
         if(isset($limit) && $limit>=0) $page = "LIMIT $from, $limit";
         if(empty($columns)) $sql = "SELECT * FROM `$table` $page;";
@@ -293,6 +300,7 @@ class Database
 
     public function getTableWhere($table, $columns='', $where='1')
     {
+        if(empty($this->dbh)) return false;
         // Если where - массив, автоматически пропарсить его в makeFilterWhere
         if(gettype($where)=='array') $where=Database::makeFilterWhere($where);
         $sql = "SELECT";
@@ -315,6 +323,7 @@ class Database
 
     public function getTableByKey($table, $key, $keyColumnName='scope')
     {
+        if(empty($this->dbh)) return false;
         $sql = "SELECT * FROM `".$table."` WHERE $keyColumnName='".$key."';";
         $stmt = $this->dbh->query($sql);
         $stmt->setFetchMode(PDO::FETCH_ASSOC);
@@ -326,6 +335,7 @@ class Database
 
     public function getCount($sql)
     {
+        if(empty($this->dbh)) return false;
         // Неэкономичная функция, надо поправить
         $stmt = $this->dbh->query($sql);
         $stmt->setFetchMode(PDO::FETCH_ASSOC);
@@ -336,8 +346,8 @@ class Database
         return $count;
     }
 
-    public function Count($table, $where)
-    {
+    public function Count($table, $where)    {
+        if(empty($this->dbh)) return false;
         $sql='SELECT COUNT(*) as count FROM `'.$table.'` WHERE '.$where;
         $stmt = $this->dbh->query($sql);
         $stmt->setFetchMode(PDO::FETCH_ASSOC);
@@ -350,6 +360,7 @@ class Database
 
 
     public function putOne($table, $data, $flags=0){
+        if(empty($this->dbh)) return false;
         $fields=array();
         $placeholders=array();
         foreach($data as $key => $val){
@@ -392,6 +403,7 @@ class Database
     }
 
     public function put($table, $fields, $data, $flags=0, $overlay=array(), $default=NULL){
+        if(empty($this->dbh)) return false;
         if(empty($fields) || empty($data)) return false;
         $this->dbh->beginTransaction();
         if(gettype($fields)=='string') $fields=explode(',',$fields);
@@ -427,6 +439,7 @@ class Database
     }
 
     public function updateOne($table, $id, $data, $id_field_name='id'){
+        if(empty($this->dbh)) return false;
         $fields=array();
         $placeholders=array();
         unset($data[$id_field_name]);
@@ -459,6 +472,7 @@ class Database
     // за это отвечает параметр $props['fastmode']
     // В противном случае данные могут перемешаться по столбцам
     public function updateMass($table, $data, $props=array()){
+        if(empty($this->dbh)) return false;
         if(empty($data)) return false;
         $config=array(
             'fields'    =>  NULL,
@@ -580,5 +594,13 @@ class Database
             }
         }
         return $where;
+    }
+
+    function close(){
+        $this->dbh = null;
+    }
+
+    function __destruct(){
+        $this->dbh = null;
     }
 } // class Database
