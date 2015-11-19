@@ -157,6 +157,21 @@ class Database
         return $res;
     }
 
+    public function toValueArray($storage='getTable', $column=1)
+    {
+        $res = array();
+        foreach ($this->last[$storage] as $row) {
+            $val = '';
+            $i=0;
+            foreach ($row as $field) {
+                $val = $field;
+                if($i>=$column)break;
+            }
+            $res[] = $val;
+        }
+        return $res;
+    }
+
     public function getOneWhere($table, $where='1', $filter='')
     {
         $sql = "SELECT ";
